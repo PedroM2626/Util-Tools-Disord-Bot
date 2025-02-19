@@ -3,4 +3,3 @@ yt_dlp
 pytesseract
 qrcode
 rembg
-urllib
