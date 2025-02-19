@@ -4,3 +4,4 @@ pytesseract
 qrcode
 rembg
 gunicorn
+onnxruntime
