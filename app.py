@@ -253,7 +253,10 @@ async def download(interaction: discord.Interaction,
         ydl_opts = {
             'format': 'bestaudio/best',
             'outtmpl': '%(title)s.%(ext)s',
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36',
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36',
+                'Referer': 'https://www.youtube.com/'
+            },
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': file_format.value,
@@ -261,12 +264,17 @@ async def download(interaction: discord.Interaction,
             }],
         }
 
+
     elif file_format.value in ["mp4", "webm"]:
         ydl_opts = {
             'format': 'bestaudio/best',
             'outtmpl': '%(title)s.%(ext)s',
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36'
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36',
+                'Referer': 'https://www.youtube.com/'
+            }
         }
+
 
     else:
         await interaction.followup.send("Formato inválido. Use mp3, wav, mp4 ou webm.")
