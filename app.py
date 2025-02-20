@@ -88,7 +88,7 @@ class MusicPlayer:
 # Dicionário global para players de música (por guild)
 music_players = {}
 
-# Função de autocompletar para o parâmetro "quality"
+# Função de autocompletar para "quality"
 async def quality_autocomplete(interaction: discord.Interaction, current: str) -> list[app_commands.Choice[str]]:
     try:
         url = interaction.namespace.url
@@ -108,7 +108,7 @@ async def quality_autocomplete(interaction: discord.Interaction, current: str) -
     except Exception:
         return []
 
-# Função auxiliar para enviar mensagens de erro grandes como anexo
+# Função auxiliar para enviar erros grandes como anexo
 async def send_error(interaction: discord.Interaction, error_message: str):
     if len(error_message) > 1900:
         temp_error = tempfile.NamedTemporaryFile(delete=False, suffix=".txt", mode="w", encoding="utf-8")
@@ -206,7 +206,6 @@ async def download(interaction: discord.Interaction,
                    subtitle: str = None):
     await interaction.response.defer()
 
-    # Para Spotify, use spotdl com a palavra-chave "download"
     if plataforma.value == "spotify":
         if file_format.value != "mp3":
             await interaction.followup.send("O Spotify suporta apenas o formato mp3.")
@@ -217,8 +216,7 @@ async def download(interaction: discord.Interaction,
             command = ["spotdl", "download", url, "--format", "mp3", "--output", temp_dir]
             result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             if result.returncode != 0:
-                error_message = result.stderr.decode()
-                await send_error(interaction, error_message)
+                await send_error(interaction, result.stderr.decode())
                 shutil.rmtree(temp_dir)
                 return
             downloaded_files = os.listdir(temp_dir)
@@ -238,7 +236,11 @@ async def download(interaction: discord.Interaction,
                 else:
                     await send_error(interaction, res.stderr.decode())
             if os.path.exists(final_file):
-                await interaction.followup.send(file=discord.File(final_file))
+                tamanho = os.path.getsize(final_file)
+                if tamanho < 8 * 1024 * 1024:
+                    await interaction.followup.send(file=discord.File(final_file))
+                else:
+                    await interaction.followup.send("Arquivo baixado, mas muito grande para envio automático no Discord.")
             else:
                 await interaction.followup.send("Arquivo não encontrado após o download.")
             shutil.rmtree(temp_dir)
@@ -247,35 +249,30 @@ async def download(interaction: discord.Interaction,
             shutil.rmtree(temp_dir)
         return
 
-    # Para outras plataformas, usa yt_dlp
     await interaction.followup.send(f"Iniciando download de **{plataforma.value}** no formato **{file_format.value}**...")
     if file_format.value in ["mp3", "wav"]:
         ydl_opts = {
             'format': 'bestaudio/best',
             'outtmpl': '%(title)s.%(ext)s',
-            'http_headers': {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36',
-                'Referer': 'https://www.youtube.com/'
-            },
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': file_format.value,
                 'preferredquality': '192',
             }],
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36',
+                'Referer': 'https://www.youtube.com/'
+            }
         }
-
-
     elif file_format.value in ["mp4", "webm"]:
         ydl_opts = {
-            'format': 'bestaudio/best',
+            'format': 'bestvideo+bestaudio/best',
             'outtmpl': '%(title)s.%(ext)s',
             'http_headers': {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36',
                 'Referer': 'https://www.youtube.com/'
             }
         }
-
-
     else:
         await interaction.followup.send("Formato inválido. Use mp3, wav, mp4 ou webm.")
         return
@@ -304,9 +301,13 @@ async def download(interaction: discord.Interaction,
             else:
                 await send_error(interaction, res.stderr.decode())
         if os.path.exists(final_file):
-            await interaction.followup.send(file=discord.File(final_file))
+            tamanho = os.path.getsize(final_file)
+            if tamanho < 8 * 1024 * 1024:
+                await interaction.followup.send(file=discord.File(final_file))
+            else:
+                await interaction.followup.send("Arquivo baixado, mas muito grande para envio automático no Discord.")
         else:
-            await interaction.followup.send("Arquivo não encontrado após o download.")
+            await interaction.followup.send("Arquivo não encontrado após o download. Verifique se a conversão ocorreu corretamente.")
     except Exception as e:
         await interaction.followup.send(f"Erro ao baixar: {e}")
 
@@ -441,7 +442,11 @@ async def convert(interaction: discord.Interaction, target_format: str, attachme
         os.remove(input_path)
         return
     if os.path.exists(output_path):
-        await interaction.followup.send(file=discord.File(output_path))
+        tamanho = os.path.getsize(output_path)
+        if tamanho < 8 * 1024 * 1024:
+            await interaction.followup.send(file=discord.File(output_path))
+        else:
+            await interaction.followup.send("Arquivo convertido, mas muito grande para envio automático no Discord.")
         os.remove(output_path)
     else:
         await interaction.followup.send("Falha ao encontrar o arquivo convertido.")
@@ -501,7 +506,11 @@ async def adjustaudio(interaction: discord.Interaction, attachment: discord.Atta
         os.remove(input_path)
         return
     if os.path.exists(output_path):
-        await interaction.followup.send(file=discord.File(output_path))
+        tamanho = os.path.getsize(output_path)
+        if tamanho < 8 * 1024 * 1024:
+            await interaction.followup.send(file=discord.File(output_path))
+        else:
+            await interaction.followup.send("Arquivo ajustado, mas muito grande para envio automático no Discord.")
         os.remove(output_path)
     else:
         await interaction.followup.send("Falha ao encontrar o arquivo ajustado.")
@@ -640,8 +649,7 @@ async def play(interaction: discord.Interaction, query: str):
             command = ["spotdl", "download", query, "--format", "mp3", "--output", temp_dir]
             result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             if result.returncode != 0:
-                error_message = result.stderr.decode()
-                await send_error(interaction, error_message)
+                await send_error(interaction, result.stderr.decode())
                 shutil.rmtree(temp_dir)
                 return
             downloaded_files = os.listdir(temp_dir)
@@ -659,7 +667,7 @@ async def play(interaction: discord.Interaction, query: str):
                     info = info["entries"][0]
             temp_dir = tempfile.mkdtemp()
             download_opts = {
-                'format': 'bestaudio/best',
+                'format': 'bestaudio+bestaudio',
                 'outtmpl': os.path.join(temp_dir, '%(title)s.%(ext)s'),
                 'quiet': True
             }
@@ -780,25 +788,6 @@ async def translate_text(interaction: discord.Interaction, text: str, mode: app_
     else:
         result = "Modo inválido."
     await interaction.followup.send(f"Resultado:\n```{result}```")
-
-# ─── COMANDO /decode ─────────────────────────────────────────────
-@app_commands.command(name="decode", description="Decodifica uma mensagem em binário ou morse para texto normal.")
-@app_commands.describe(
-    encoded_text="Mensagem codificada (binário ou morse)",
-    mode="Modo: 'binary' para decodificar binário, 'morse' para decodificar morse"
-)
-@app_commands.choices(
-    mode=[app_commands.Choice(name="binary", value="binary"), app_commands.Choice(name="morse", value="morse")]
-)
-async def decode(interaction: discord.Interaction, encoded_text: str, mode: app_commands.Choice[str]):
-    await interaction.response.defer()
-    if mode.value == "binary":
-        decoded = binary_to_text(encoded_text)
-    elif mode.value == "morse":
-        decoded = morse_to_text(encoded_text)
-    else:
-        decoded = "Modo inválido."
-    await interaction.followup.send(f"Mensagem decodificada:\n```{decoded}```")
 
 # ─── COMANDO /fusion ─────────────────────────────────────────────
 @app_commands.command(name="fusion", description="Funde duas imagens horizontalmente.")
