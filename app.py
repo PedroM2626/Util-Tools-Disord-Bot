@@ -541,28 +541,38 @@ async def qrcode_command(interaction: discord.Interaction, text: str):
 
 # ─── COMANDO /removebg ─────────────────────────────────────────────
 @app_commands.command(name="removebg", description="Remove o fundo de uma imagem.")
-@app_commands.describe(file_url="URL da imagem (se não informado, use um anexo)")
-async def removebg(interaction: discord.Interaction, file_url: str = None):
+@app_commands.describe(
+    file_url="URL da imagem (se não informado, use o attachment)",
+    attachment="Attachment da imagem (se não informado, use uma URL)"
+)
+async def removebg(interaction: discord.Interaction, file_url: str = None, attachment: discord.Attachment = None):
     await interaction.response.defer()
+
+    # Se file_url não foi fornecido, tenta usar o attachment
     if file_url is None:
-        if interaction.data.get("attachments"):
+        if attachment is not None:
+            file_url = attachment.url
+        elif interaction.data.get("attachments"):
             file_url = interaction.data["attachments"][0]["url"]
         else:
             await interaction.followup.send("Por favor, forneça uma URL ou anexe uma imagem.")
             return
+
     async with aiohttp.ClientSession() as session:
         try:
             async with session.get(file_url) as resp:
                 if resp.status != 200:
-                    await interaction.followup.send("Não foi possível baixar a imagem (verifique a URL).")
+                    await interaction.followup.send("Não foi possível baixar a imagem (verifique a URL ou o attachment).")
                     return
                 input_data = await resp.read()
         except Exception as e:
             await interaction.followup.send(f"Erro ao baixar a imagem: {e}")
             return
+
     with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as temp_in:
         temp_in.write(input_data)
         input_path = temp_in.name
+
     output_path = os.path.splitext(input_path)[0] + "_no_bg.png"
     try:
         with open(input_path, 'rb') as i:
