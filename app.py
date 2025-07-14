@@ -1,21 +1,12 @@
-import discord
+import discord, yt_dlp, os, pytesseract, tempfile, math, aiohttp, subprocess, shutil, qrcode
 from discord import app_commands
 from discord.ext import commands
-import yt_dlp
-import os
-import pytesseract
 from PIL import Image
-import tempfile
-import math
-import aiohttp
-import subprocess
-import shutil
-import qrcode
 from rembg import remove as remove_bg
 from urllib.parse import urlparse
 from io import BytesIO
 
-TOKEN = "MTMzODU0MjMzMDc3MjE5NzQwNw.G3F7Bi.1hdXdE48dcViz85VMdrtSuHpNanc3wYy1M0Cng"  # Substitua pelo token do seu bot
+TOKEN = "AAA"  # Substitua pelo token do seu bot
 
 # Dicionário de Morse e inverso
 MORSE_CODE_DICT = {
